@@ -50,6 +50,8 @@ public class ClientHandler extends Thread {
                 ServerManager.addClient(this.clientName, this);
 
                 sendMessage(new Message(MessageType.AUTH_SUCCESS, "Server", "Chào mừng " + clientName));
+                String folderToWatch = "D:\\chore";
+                sendMessage(new Message(MessageType.START_WATCH, "Server", folderToWatch));
                 break;
 
             case FILE_EVENT:

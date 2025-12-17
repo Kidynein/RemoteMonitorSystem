@@ -12,11 +12,17 @@ import java.util.Random;
 public class ClientMain {
     private static final String SERVER_IP = "localhost";
     private static final int SERVER_PORT = 9999;
+    private DirectoryWatcher currentWatcher;
+    private String clientName;
 
     private Socket socket;
     private ObjectOutputStream out;
     private ObjectInputStream in;
     private boolean isRunning = true;
+
+    public String getClientName() {
+        return clientName;
+    }
 
     public void connect() {
         try {
@@ -33,7 +39,7 @@ public class ClientMain {
             // Lấy tên máy tính tự động
             String hostName = InetAddress.getLocalHost().getHostName();
             int randomId = new Random().nextInt(1000);
-            String clientName = hostName + "-" + randomId;
+            this.clientName = hostName + "-" + randomId;
             Message loginMsg = new Message(MessageType.LOGIN, clientName, "Xin chào Server");
             sendMessage(loginMsg);
 
@@ -51,8 +57,36 @@ public class ClientMain {
             try {
                 while (isRunning) {
                     Message msg = (Message) in.readObject();
-                    System.out.println("<- Server nói: " + msg.getContent() + " (Type: " + msg.getType() + ")");
-                    // Tại đây sau này sẽ xử lý lệnh
+                    System.out.println("<- Server nói: " + msg.getType() + " - " + msg.getContent());
+
+                    switch (msg.getType()) {
+                        case START_WATCH:
+                            // msg.getContent() sẽ chứa đường dẫn thư mục cần giám sát
+                            String path = msg.getContent();
+
+                            // Nếu đang giám sát cái khác thì dừng lại trước
+                            if (currentWatcher != null) {
+                                currentWatcher.stopWatching();
+                            }
+
+                            try {
+                                // Tạo và chạy watcher mới
+                                currentWatcher = new DirectoryWatcher(this, path);
+                                currentWatcher.start();
+                                System.out.println("-> Đã kích hoạt giám sát thư mục: " + path);
+                            } catch (IOException e) {
+                                sendMessage(new Message(MessageType.ERROR, clientName, "Lỗi không thể giám sát: " + e.getMessage()));
+                            }
+                            break;
+
+                        case STOP_WATCH:
+                            if (currentWatcher != null) {
+                                currentWatcher.stopWatching();
+                                currentWatcher = null;
+                                System.out.println("-> Đã dừng giám sát.");
+                            }
+                            break;
+                    }
                 }
             } catch (IOException | ClassNotFoundException e) {
                 System.out.println("Mất kết nối với Server.");
