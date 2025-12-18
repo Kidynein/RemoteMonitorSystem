@@ -48,14 +48,30 @@ public class ClientHandler extends Thread {
             case LOGIN:
                 this.clientName = msg.getSender();
                 ServerManager.addClient(this.clientName, this);
+                server.view.ServerFrame.updateClientList(this.clientName, true);
 
-                sendMessage(new Message(MessageType.AUTH_SUCCESS, "Server", "Chào mừng " + clientName));
-                String folderToWatch = "D:\\chore";
-                sendMessage(new Message(MessageType.START_WATCH, "Server", folderToWatch));
+                sendMessage(new Message(MessageType.AUTH_SUCCESS, "Server", "OK"));
                 break;
 
             case FILE_EVENT:
-                System.out.println("!!! CẢNH BÁO THAY ĐỔI FILE TỪ " + msg.getSender() + ": " + msg.getContent());
+                server.view.ServerFrame.addLog(msg.getSender(), msg.getAction(), msg.getContent());
+                System.out.println("LOG: " + msg.getContent());
+                break;
+
+            case ERROR:
+                String sender = msg.getSender();
+                String errorContent = msg.getContent();
+
+                server.view.ServerFrame.addLog(sender, "LỖI", errorContent);
+
+                System.err.println("LỖI TỪ " + sender + ": " + errorContent);
+
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    javax.swing.JOptionPane.showMessageDialog(null,
+                            "Client " + sender + " gặp lỗi:\n" + errorContent,
+                            "Lỗi Giám sát",
+                            javax.swing.JOptionPane.ERROR_MESSAGE);
+                });
                 break;
 
             default:
@@ -75,6 +91,9 @@ public class ClientHandler extends Thread {
     private void closeConnection() {
         isRunning = false;
         ServerManager.removeClient(clientName);
+        if (clientName != null) {
+            server.view.ServerFrame.updateClientList(clientName, false);
+        }
         try {
             if (in != null) in.close();
             if (out != null) out.close();

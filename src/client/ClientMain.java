@@ -74,8 +74,11 @@ public class ClientMain {
                                 currentWatcher = new DirectoryWatcher(this, path);
                                 currentWatcher.start();
                                 System.out.println("-> Đã kích hoạt giám sát thư mục: " + path);
+                                sendMessage(new Message(MessageType.FILE_EVENT, clientName, path, "MONITOR_STARTED"));
                             } catch (IOException e) {
-                                sendMessage(new Message(MessageType.ERROR, clientName, "Lỗi không thể giám sát: " + e.getMessage()));
+                                System.err.println("Lỗi: Thư mục không tồn tại " + path);
+                                String errorMsg = "Thư mục không tồn tại hoặc không thể truy cập: " + path;
+                                sendMessage(new Message(MessageType.ERROR, clientName, errorMsg));
                             }
                             break;
 
