@@ -16,8 +16,8 @@ public class ServerMain {
             new ServerFrame().setVisible(true);
         });
 
-        // 2. Chạy Server Socket (Code cũ)
-        new Thread(() -> { // Đẩy việc lắng nghe socket sang luồng khác để không đơ giao diện
+        // 2. Chạy Server Socket
+        new Thread(() -> {
             try (ServerSocket serverSocket = new ServerSocket(PORT)) {
                 System.out.println("Server đã sẵn sàng...");
                 while (true) {

@@ -8,6 +8,7 @@ import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Random;
+import client.view.ClientFrame;
 
 public class ClientMain {
     private static final String SERVER_IP = "localhost";
@@ -19,36 +20,52 @@ public class ClientMain {
     private ObjectOutputStream out;
     private ObjectInputStream in;
     private boolean isRunning = true;
+    private ClientFrame view;
+
+    public ClientMain(ClientFrame view) {
+        this.view = view;
+    }
 
     public String getClientName() {
         return clientName;
     }
 
-    public void connect() {
+    public void connect(String ip, int port) {
+        new Thread(() -> {
+            try {
+                view.updateStatus("Đang kết nối tới " + ip + "...");
+                socket = new Socket(ip, port);
+                out = new ObjectOutputStream(socket.getOutputStream());
+                in = new ObjectInputStream(socket.getInputStream());
+
+                // Logic tạo tên
+                String hostName = InetAddress.getLocalHost().getHostName();
+                int randomId = new Random().nextInt(1000);
+                this.clientName = hostName + "-" + randomId;
+
+                // Gửi Login
+                sendMessage(new Message(MessageType.LOGIN, clientName, "Xin chào"));
+
+                // Cập nhật giao diện: Đã kết nối
+                view.updateStatus("Đã kết nối! ID: " + clientName);
+                view.setConnectedState(true); // Khóa nút Connect, mở nút Disconnect
+
+                startListening();
+
+            } catch (IOException e) {
+                view.updateStatus("Lỗi kết nối: " + e.getMessage());
+                view.setConnectedState(false);
+            }
+        }).start();
+    }
+    public void disconnect() {
+        isRunning = false;
         try {
-            System.out.println("Đang kết nối tới Server " + SERVER_IP + ":" + SERVER_PORT + "...");
-            socket = new Socket(SERVER_IP, SERVER_PORT);
-
-            // Tạo luồng gửi/nhận
-            out = new ObjectOutputStream(socket.getOutputStream());
-            in = new ObjectInputStream(socket.getInputStream());
-
-            System.out.println("-> Đã kết nối thành công!");
-
-            // Gửi tin nhắn đăng nhập ngay khi kết nối
-            // Lấy tên máy tính tự động
-            String hostName = InetAddress.getLocalHost().getHostName();
-            int randomId = new Random().nextInt(1000);
-            this.clientName = hostName + "-" + randomId;
-            Message loginMsg = new Message(MessageType.LOGIN, clientName, "Xin chào Server");
-            sendMessage(loginMsg);
-
-            // Bắt đầu lắng nghe lệnh từ Server
-            startListening();
-
-        } catch (IOException e) {
-            System.err.println("Không thể kết nối tới Server. Hãy chắc chắn Server đã bật!");
-        }
+            if (currentWatcher != null) currentWatcher.stopWatching();
+            if (socket != null) socket.close();
+            view.updateStatus("Đã ngắt kết nối.");
+            view.setConnectedState(false);
+        } catch (IOException e) { e.printStackTrace(); }
     }
 
     private void startListening() {
@@ -74,6 +91,7 @@ public class ClientMain {
                                 currentWatcher = new DirectoryWatcher(this, path);
                                 currentWatcher.start();
                                 System.out.println("-> Đã kích hoạt giám sát thư mục: " + path);
+                                view.updateMonitoringPath(path);
                                 sendMessage(new Message(MessageType.FILE_EVENT, clientName, path, "MONITOR_STARTED"));
                             } catch (IOException e) {
                                 System.err.println("Lỗi: Thư mục không tồn tại " + path);
@@ -118,9 +136,5 @@ public class ClientMain {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public static void main(String[] args) {
-        new ClientMain().connect();
     }
 }
