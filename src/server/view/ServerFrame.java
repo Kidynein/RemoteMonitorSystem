@@ -48,6 +48,8 @@ public class ServerFrame extends JFrame {
         JPopupMenu popupMenu = new JPopupMenu();
         JMenuItem monitorItem = new JMenuItem("Giám sát thư mục...");
         popupMenu.add(monitorItem);
+        JMenuItem stopItem = new JMenuItem("Ngừng giám sát");
+        popupMenu.add(stopItem);
 
         // Xử lý sự kiện click chuột phải
         clientList.addMouseListener(new MouseAdapter() {
@@ -59,6 +61,16 @@ public class ServerFrame extends JFrame {
                         popupMenu.show(clientList, e.getX(), e.getY());
                     }
                 }
+            }
+        });
+        stopItem.addActionListener(e -> {
+            String selectedClient = clientList.getSelectedValue();
+            if (selectedClient != null) {
+                Message msg = new Message(MessageType.STOP_WATCH, "Server", "STOP");
+                ServerManager.sendToClient(selectedClient, msg);
+
+                // Ghi log báo cáo
+                logPanel.addLog("Server", "CMD_SEND", "Yêu cầu DỪNG giám sát -> " + selectedClient);
             }
         });
 

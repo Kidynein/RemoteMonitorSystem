@@ -34,6 +34,8 @@ public class ClientMain {
         new Thread(() -> {
             try {
                 view.updateStatus("Đang kết nối tới " + ip + "...");
+                this.isRunning = true;
+
                 socket = new Socket(ip, port);
                 out = new ObjectOutputStream(socket.getOutputStream());
                 in = new ObjectInputStream(socket.getInputStream());
@@ -69,7 +71,7 @@ public class ClientMain {
     }
 
     private void startListening() {
-        // Tạo một Thread mới chỉ để ngồi nghe Server nói gì
+        // nghe Server nói gì
         Thread listenerThread = new Thread(() -> {
             try {
                 while (isRunning) {
@@ -105,6 +107,8 @@ public class ClientMain {
                                 currentWatcher.stopWatching();
                                 currentWatcher = null;
                                 System.out.println("-> Đã dừng giám sát.");
+                                view.updateMonitoringPath("Đang chờ lệnh... (Đã dừng)");
+                                sendMessage(new Message(MessageType.FILE_EVENT, clientName, "Đã dừng giám sát", "STOPPED"));
                             }
                             break;
                     }

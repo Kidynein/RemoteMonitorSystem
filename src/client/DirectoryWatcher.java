@@ -114,7 +114,7 @@ public class DirectoryWatcher extends Thread {
     public void stopWatching() {
         isRunning = false;
         try {
-            watcher.close();
+            if (watcher != null) watcher.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
