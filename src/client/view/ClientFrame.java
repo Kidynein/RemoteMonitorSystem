@@ -28,10 +28,10 @@ public class ClientFrame extends JFrame {
         setLayout(new GridLayout(4, 1));
 
         // Cấu hình kết nối
-        JPanel pnlConfig = new JPanel(new FlowLayout());
-        pnlConfig.add(new JLabel("Server IP:"));
+        JPanel pnlConfig = new JPanel(new GridLayout(2, 1));
+        pnlConfig.add(new JLabel("Server IP: localhost", JLabel.CENTER));
         txtIP = new JTextField("localhost", 10);
-        pnlConfig.add(new JLabel("Port:"));
+        pnlConfig.add(new JLabel("Port: 9999", JLabel.CENTER));
         txtPort = new JTextField("9999", 5);
         add(pnlConfig);
 
